@@ -39,6 +39,10 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+app.get('/', (req, res) => {
+    res.send('Bienvenido a la página inicial');
+});
+
 // VIEW QUESTIONNAIRE
 app.get('/questionnaires/:questionnaireId', async (req, res) => {
     const questionnaireId = req.params.questionnaireId;
