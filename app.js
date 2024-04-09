@@ -210,7 +210,7 @@ app.post('/send-email', async (req, res) => {
                 const activeId = activeResult.insertedId;
 
                 // Generar el enlace con el ID del objeto "active"
-                const chatbotLink = `http://localhost:3001/${activeId}`;
+                const chatbotLink = `https://interactwithchatbot.up.railway.app/${activeId}`;
 
                 // Configurar opciones del correo electrónico
                 const mailOptions = {
