@@ -18,13 +18,14 @@ const upload = multer({ storage: storage })
 const app = express();
 app.use(express.json());
 app.use(cors());
+const PORT = process.env.PORT || 3000; 
 // db connection
 let db;
 
 connectToDb((err) => {  
     if (!err) {
-        app.listen(3000, () => {
-            console.log('app listening on port 3000');
+        app.listen(PORT, () => {
+            console.log(`Servidor escuchando en el puerto ${PORT}`);
         });
         db = getDb();
     }
