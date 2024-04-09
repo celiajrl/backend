@@ -4,7 +4,7 @@ let dbConnection;
 
 module.exports = {
     connectToDb: (cb) => {
-        const uri = 'mongodb+srv://chatbotevaluator:2024_UAM_chatbot@evaluator.vvans3s.mongodb.net/evaluator?retryWrites=true&w=majority&appName=evaluator'; 
+        const uri = process.env.MONGODB_URI; 
         if (!uri) {
             return cb(new Error('MongoDB URI not found in environment variables'));
         }
