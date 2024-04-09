@@ -64,6 +64,7 @@ app.get('/questionnaires/:questionnaireId', async (req, res) => {
 // ROUTES FOR USERS
 app.get('/users', (req, res) => { 
     let users = []; 
+    console.log('busco users');
     db.collection('users')
         .find() 
         .sort({ name: 1 })
