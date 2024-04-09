@@ -1,16 +1,26 @@
-const { MongoClient } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 
 let dbConnection;
 
 module.exports = {
     connectToDb: (cb) => {
-        const uri = process.env.MONGODB_URI; 
+        const uri = process.env.MONGODB_URI;
         if (!uri) {
             return cb(new Error('MongoDB URI not found in environment variables'));
         }
 
-        MongoClient.connect(uri, { useUnifiedTopology: true })
-            .then((client) => {
+        // Create a MongoClient with MongoClientOptions object to set the Stable API version
+        const client = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                strict: true,
+                deprecationErrors: true,
+            }
+        });
+
+        // Connect to MongoDB using the client
+        client.connect()
+            .then(() => {
                 dbConnection = client.db();
                 console.log('Connected to MongoDB');
                 return cb();
