@@ -6,7 +6,6 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
-const AdmZip = require('adm-zip');
 
 
 const chatbotController = require('./controllers/chatbotController');
