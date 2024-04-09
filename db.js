@@ -2,9 +2,10 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 
 let dbConnection;
 
+
 module.exports = {
     connectToDb: (cb) => {
-        const uri = process.env.MONGODB_URI;
+        const uri = process.env.MONGODB_URI || "mongodb+srv://chatbotevaluator:2024_UAM_chatbot@evaluator.vvans3s.mongodb.net/evaluator?retryWrites=true&w=majority&appName=evaluator";
         if (!uri) {
             return cb(new Error('MongoDB URI not found in environment variables'));
         }
