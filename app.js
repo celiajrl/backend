@@ -289,7 +289,7 @@ app.post('/register', async (req, res) => {
 
       const result = await db.collection('users').insertOne(newUser);
 
-      res.status(201).json({ message: 'Registration successful', insertedId: result.insertedId });
+      res.status(201).json({ message: 'Registration successful', result });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Internal Server Error' });
