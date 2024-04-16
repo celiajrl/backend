@@ -303,23 +303,20 @@ app.post('/register', async (req, res) => {
 app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) => {
     const userId = req.params.userId;
     const currentDate = new Date();
-
     const year = currentDate.getFullYear();
-    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0'); // Ajusta el mes para que tenga siempre dos dígitos
-    const day = currentDate.getDate().toString().padStart(2, '0'); // Ajusta el día para que tenga siempre dos dígitos
-
+    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = currentDate.getDate().toString().padStart(2, '0');
     const formattedDate = `${day}-${month}-${year}`;
 
     if (!req.file) {
         return res.status(400).send('No zip file uploaded.');
     }
 
+    // Verify required contents in the zip file
     const zip = new AdmZip(req.file.buffer);
-    const zipEntries = zip.getEntries(); // An array of ZipEntry records
-
+    const zipEntries = zip.getEntries();
     const requiredFiles = ['config.yml', 'domain.yml'];
     const requiredDirectories = ['models', 'data'];
-
     let missingFiles = requiredFiles.filter(file => !zipEntries.some(zipEntry => zipEntry.entryName.includes(file)));
     let missingDirectories = requiredDirectories.filter(directory => !zipEntries.some(zipEntry => zipEntry.isDirectory && zipEntry.entryName.startsWith(directory)));
 
@@ -328,32 +325,33 @@ app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) =
         return res.status(400).json({ error: missingItemsMessage });
     }
 
-    // Eliminar venv si existe
-    const venvDirectory = zipEntries.find(entry => entry.isDirectory && entry.entryName.startsWith('venv'));
-    if (venvDirectory) {
-        try {
-            zip.deleteFile(venvDirectory.entryName); // Elimina el directorio 'venv' del zip
-        } catch (error) {
-            console.error(`Error deleting venv directory: ${error}`);
-            return res.status(500).json({ error: 'Error deleting venv directory' });
+    // Use GridFS to handle large zip files
+    const { getGridFSBucket, uploadFileToGridFS } = require('./db');
+    const readStream = new Buffer.from(req.file.buffer);
+    const filename = `${req.body.name}-${formattedDate}.zip`; // Create a unique filename
+
+    uploadFileToGridFS(readStream, filename, (err, fileId) => {
+        if (err) {
+            console.error('Error uploading file to GridFS:', err);
+            return res.status(500).json({ error: 'Failed to upload zip file' });
         }
-    }
 
-    const chatbotData = {
-        name: req.body.name,
-        version: req.body.version || "1.0",
-        date: formattedDate,
-        zipFile: zip.toBuffer().toString('base64'),
-        userId
-    };
+        const chatbotData = {
+            name: req.body.name,
+            version: req.body.version || "1.0",
+            date: formattedDate,
+            zipFileId: fileId,  // Store file ID instead of base64 string
+            userId
+        };
 
-    try {
-        const chatbotId = await chatbotController.createChatbot(chatbotData);
-        res.status(201).json({ chatbotId });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+        try {
+            const chatbotId = await chatbotController.createChatbot(chatbotData);
+            res.status(201).json({ chatbotId, fileId }); // Optionally return fileId for further reference
+        } catch (error) {
+            console.error('Error creating chatbot:', error);
+            res.status(500).json({ error: 'Internal Server Error' });
+        }
+    });
 });
 
 

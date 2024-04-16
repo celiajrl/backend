@@ -1,7 +1,8 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, GridFSBucket } = require('mongodb');
+const fs = require('fs');
 
 let dbConnection;
-
+let gridFSBucket;
 
 module.exports = {
     connectToDb: (cb) => {
@@ -10,26 +11,51 @@ module.exports = {
             return cb(new Error('MongoDB URI not found in environment variables'));
         }
 
-        // Create a MongoClient with MongoClientOptions object to set the Stable API version
-        const client = new MongoClient(uri, {
-            serverApi: {
-                version: ServerApiVersion.v1,
-                strict: true,
-                deprecationErrors: true,
-            }
-        });
+        const client = new MongoClient(uri);
 
-        // Connect to MongoDB using the client
         client.connect()
             .then(() => {
                 dbConnection = client.db();
+                // Initialize GridFS bucket
+                gridFSBucket = new GridFSBucket(dbConnection, {
+                    bucketName: 'chatbots'
+                });
                 console.log('Connected to MongoDB');
-                return cb();
+                cb();
             })
             .catch(err => {
                 console.error('Error connecting to MongoDB:', err);
-                return cb(err);
+                cb(err);
             });
     },
-    getDb: () => dbConnection
+    getDb: () => dbConnection,
+    getGridFSBucket: () => gridFSBucket,
+
+    // Upload a file to GridFS
+    uploadFileToGridFS: (fileStream, filename, callback) => {
+        const uploadStream = gridFSBucket.openUploadStream(filename);
+        fileStream.pipe(uploadStream)
+            .on('error', (error) => {
+                console.error('Failed to upload file:', error);
+                callback(error, null);
+            })
+            .on('finish', () => {
+                console.log('File uploaded successfully');
+                callback(null, uploadStream.id);  // Return the file ID
+            });
+    },
+
+    // Retrieve a file from GridFS
+    getFileFromGridFS: (fileId, res) => {
+        const downloadStream = gridFSBucket.openDownloadStream(fileId);
+        downloadStream.pipe(res)
+            .on('error', (error) => {
+                console.error('Failed to retrieve file:', error);
+                res.status(500).send('Failed to retrieve file');
+            })
+            .on('finish', () => {
+                console.log('File retrieved successfully');
+            });
+    }
 };
+
