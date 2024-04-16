@@ -323,14 +323,16 @@ app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) =
         if (!hasAllRequiredDirectories) missingItems.push(...requiredDirectories);
         return res.status(400).json({ error: `Missing required items: ${missingItems.join(', ')}` });
     }
-
+    console.log("subo archivo a gridfs");
     // Subir archivo a GridFS
     const filename = `${req.body.name}-${new Date().toISOString()}.zip`; // Crea un nombre de archivo único
+    console.log(filename);
     uploadFileToGridFS(req.file.buffer, filename, async (err, fileId) => {
         if (err) {
             console.error('Error uploading file to GridFS:', err);
             return res.status(500).json({ error: 'Failed to upload zip file' });
         }
+        console.log("file uloaded to gridfs");
 
         const chatbotData = {
             name: req.body.name,
