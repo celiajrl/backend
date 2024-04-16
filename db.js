@@ -33,12 +33,15 @@ module.exports = {
 
     uploadFileToGridFS: (fileBuffer, filename, callback) => {
         const uploadStream = gridFsBucket.openUploadStream(filename);
+        console.log(uploadStream);
         uploadStream.write(fileBuffer, err => {
             if (err) {
                 return callback(err);
             }
             uploadStream.end();
+            console.log("end stream write");
         });
+        console.log("aqui");
 
         uploadStream.on('finish', () => {
             console.log('File uploaded successfully to GridFS');
