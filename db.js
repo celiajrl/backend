@@ -1,5 +1,6 @@
 const { MongoClient, ObjectId } = require('mongodb');
 const { GridFSBucket } = require('mongodb');
+const stream = require('stream');
 
 let dbConnection;
 let gridFsBucket;
@@ -11,7 +12,7 @@ module.exports = {
             return cb(new Error('MongoDB URI not found in environment variables'));
         }
 
-        const client = new MongoClient(uri);
+        const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
         client.connect()
             .then(() => {
                 dbConnection = client.db();
@@ -32,37 +33,35 @@ module.exports = {
     getGridFSBucket: () => gridFsBucket,
 
     uploadFileToGridFS: (fileBuffer, filename, callback) => {
-        const uploadStream = gridFsBucket.openUploadStream(filename);
-        console.log(uploadStream);
-        uploadStream.write(fileBuffer, err => {
-            if (err) {
-                return callback(err);
+        const readableStream = new stream.Readable({
+            read() {
+                this.push(fileBuffer);
+                this.push(null);
             }
-            uploadStream.end();
-            console.log("end stream write");
-        });
-        console.log("aqui");
-
-        uploadStream.on('finish', () => {
-            console.log('File uploaded successfully to GridFS');
-            callback(null, uploadStream.id); // Return the file ID for further reference
         });
 
-        uploadStream.on('error', (err) => {
-            console.error('Error uploading file to GridFS:', err);
-            callback(err);
-        });
+        const uploadStream = gridFsBucket.openUploadStream(filename);
+
+        readableStream.pipe(uploadStream)
+            .on('error', (error) => {
+                console.error('Error uploading file to GridFS:', error);
+                callback(error);
+            })
+            .on('finish', () => {
+                console.log('File uploaded successfully to GridFS');
+                callback(null, uploadStream.id); // Return the file ID for further reference
+            });
     },
 
     retrieveFileFromGridFS: (fileId, callback) => {
         const downloadStream = gridFsBucket.openDownloadStream(ObjectId(fileId));
         const chunks = [];
 
-        downloadStream.on('data', chunk => {
+        downloadStream.on('data', (chunk) => {
             chunks.push(chunk);
         });
 
-        downloadStream.on('error', err => {
+        downloadStream.on('error', (err) => {
             console.error('Error downloading file from GridFS:', err);
             callback(err, null);
         });
@@ -74,4 +73,3 @@ module.exports = {
         });
     }
 };
-
