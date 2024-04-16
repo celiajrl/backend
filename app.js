@@ -5,7 +5,9 @@ const { connectToDb, getDb } = require('./db');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
+const AdmZip = require('adm-zip');
 const fs = require('fs');
+const path = require('path');
 
 
 const chatbotController = require('./controllers/chatbotController');
@@ -308,11 +310,40 @@ app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) =
 
     const formattedDate = `${day}-${month}-${year}`;
 
+    if (!req.file) {
+        return res.status(400).send('No zip file uploaded.');
+    }
+
+    const zip = new AdmZip(req.file.buffer);
+    const zipEntries = zip.getEntries(); // An array of ZipEntry records
+
+    const requiredFiles = ['config.yml', 'domain.yml'];
+    const requiredDirectories = ['models', 'data'];
+
+    let missingFiles = requiredFiles.filter(file => !zipEntries.some(zipEntry => zipEntry.entryName.includes(file)));
+    let missingDirectories = requiredDirectories.filter(directory => !zipEntries.some(zipEntry => zipEntry.isDirectory && zipEntry.entryName.startsWith(directory)));
+
+    if (missingFiles.length > 0 || missingDirectories.length > 0) {
+        let missingItemsMessage = `Missing required items: ${missingFiles.concat(missingDirectories).join(', ')}`;
+        return res.status(400).json({ error: missingItemsMessage });
+    }
+
+    // Eliminar venv si existe
+    const venvDirectory = zipEntries.find(entry => entry.isDirectory && entry.entryName.startsWith('venv'));
+    if (venvDirectory) {
+        try {
+            zip.deleteFile(venvDirectory.entryName); // Elimina el directorio 'venv' del zip
+        } catch (error) {
+            console.error(`Error deleting venv directory: ${error}`);
+            return res.status(500).json({ error: 'Error deleting venv directory' });
+        }
+    }
+
     const chatbotData = {
         name: req.body.name,
-        version: req.body.version || "1.0", // Version from request or default to "1.0"
+        version: req.body.version || "1.0",
         date: formattedDate,
-        zipFile: req.file.buffer.toString('base64'),
+        zipFile: zip.toBuffer().toString('base64'),
         userId
     };
 
