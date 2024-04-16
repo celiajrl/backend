@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { ObjectId } = require('mongodb');
 const { connectToDb, getDb } = require('./db');
+const { uploadFileToGridFS } = require('./db');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
@@ -302,35 +303,30 @@ app.post('/register', async (req, res) => {
 // USER CREATES CHATBOT
 app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) => {
     const userId = req.params.userId;
-    const currentDate = new Date();
-    const year = currentDate.getFullYear();
-    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-    const day = currentDate.getDate().toString().padStart(2, '0');
-    const formattedDate = `${day}-${month}-${year}`;
-
     if (!req.file) {
         return res.status(400).send('No zip file uploaded.');
     }
 
-    // Verify required contents in the zip file
     const zip = new AdmZip(req.file.buffer);
     const zipEntries = zip.getEntries();
+
     const requiredFiles = ['config.yml', 'domain.yml'];
     const requiredDirectories = ['models', 'data'];
-    let missingFiles = requiredFiles.filter(file => !zipEntries.some(zipEntry => zipEntry.entryName.includes(file)));
-    let missingDirectories = requiredDirectories.filter(directory => !zipEntries.some(zipEntry => zipEntry.isDirectory && zipEntry.entryName.startsWith(directory)));
 
-    if (missingFiles.length > 0 || missingDirectories.length > 0) {
-        let missingItemsMessage = `Missing required items: ${missingFiles.concat(missingDirectories).join(', ')}`;
-        return res.status(400).json({ error: missingItemsMessage });
+    // Verificar la presencia de archivos y carpetas requeridas
+    let hasAllRequiredFiles = requiredFiles.every(file => zipEntries.some(entry => entry.entryName.split('/').pop() === file));
+    let hasAllRequiredDirectories = requiredDirectories.every(dir => zipEntries.some(entry => entry.isDirectory && entry.entryName.split('/')[0] === dir));
+
+    if (!hasAllRequiredFiles || !hasAllRequiredDirectories) {
+        let missingItems = [];
+        if (!hasAllRequiredFiles) missingItems.push(...requiredFiles);
+        if (!hasAllRequiredDirectories) missingItems.push(...requiredDirectories);
+        return res.status(400).json({ error: `Missing required items: ${missingItems.join(', ')}` });
     }
 
-    // Use GridFS to handle large zip files
-    const { getGridFSBucket, uploadFileToGridFS } = require('./db');
-    const readStream = new Buffer.from(req.file.buffer);
-    const filename = `${req.body.name}-${formattedDate}.zip`; // Create a unique filename
-
-    uploadFileToGridFS(readStream, filename, (err, fileId) => {
+    // Subir archivo a GridFS
+    const filename = `${req.body.name}-${new Date().toISOString()}.zip`; // Crea un nombre de archivo único
+    uploadFileToGridFS(req.file.buffer, filename, async (err, fileId) => {
         if (err) {
             console.error('Error uploading file to GridFS:', err);
             return res.status(500).json({ error: 'Failed to upload zip file' });
@@ -339,21 +335,21 @@ app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) =
         const chatbotData = {
             name: req.body.name,
             version: req.body.version || "1.0",
-            date: formattedDate,
-            zipFileId: fileId,  // Store file ID instead of base64 string
+            date: new Date(),
+            zipFileId: fileId,
             userId
         };
 
         try {
-            const chatbotId = await chatbotController.createChatbot(chatbotData);
-            res.status(201).json({ chatbotId, fileId }); // Optionally return fileId for further reference
+            const db = getDb();
+            const chatbotId = await db.collection('chatbots').insertOne(chatbotData);
+            res.status(201).json({ chatbotId: chatbotId.insertedId, fileId });
         } catch (error) {
             console.error('Error creating chatbot:', error);
             res.status(500).json({ error: 'Internal Server Error' });
         }
     });
 });
-
 
 
 // OBTAIN USER'S CHATBOTS
