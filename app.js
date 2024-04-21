@@ -239,21 +239,20 @@ app.get('/users/:userId/find-participant', (req, res) => {
     const surname = req.query.surname;
     const email = req.query.email;
 
-    try {
-        const participant = await db.collection('agenda')
-            .findOne({ userId: ObjectId(userId),
-                name: name,
-                surname: surname,
-                email: email});
-
-        if (participant) {
-            res.status(200).json(participant);
-        } else {
-            res.status(404).json({ message: 'Participant not found' });
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+    if (ObjectId.isValid(userId)) {
+        db.collection('agenda')
+        .findOne({ userId: ObjectId(userId),
+            name: name,
+            surname: surname,
+            email: email})
+            .then(data => {
+                res.status(200).json(data);
+            })
+            .catch(err => {
+                res.status(500).json({ error: 'Could not fetch participant' });
+            });
+    } else {
+        res.status(500).json({ error: 'Not a valid user id' });
     }
 });
 
