@@ -239,8 +239,8 @@ app.get('/users/:userId/find-participant', (req, res) => {
     const surname = req.query.surname;
     const email = req.query.email;
 
-    if (ObjectId.isValid(userId)) {
-        let participant = awaitdb.collection('agenda')
+    try {
+        let participant = await db.collection('agenda')
             .findOne({ userId: ObjectId(userId),
                 name: name,
                 surname: surname,
@@ -251,9 +251,9 @@ app.get('/users/:userId/find-participant', (req, res) => {
         } else {
             res.status(404).json({ message: 'Participant not found' });
         }
-        
-    } else {
-        res.status(400).json({ error: 'Invalid user ID' });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
