@@ -240,7 +240,7 @@ app.get('/users/:userId/find-participant', (req, res) => {
     const email = req.query.email;
 
     try {
-        let participant = await db.collection('agenda')
+        const participant = await db.collection('agenda')
             .findOne({ userId: ObjectId(userId),
                 name: name,
                 surname: surname,
