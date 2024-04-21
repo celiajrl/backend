@@ -182,6 +182,58 @@ app.post('/users/:userId/agenda', (req, res) => {
     }
 });
 
+// RUTA PARA ACTUALIZAR UN PARTICIPANTE EN LA AGENDA DE UN USUARIO
+app.patch('/users/:userId/agenda/:participantId', (req, res) => {
+    const userId = req.params.userId;
+    const participantId = req.params.participantId;
+    const updateData = req.body;
+
+    if (ObjectId.isValid(userId) && ObjectId.isValid(participantId)) {
+        db.collection('agenda')
+            .updateOne(
+                { _id: ObjectId(participantId), userId: ObjectId(userId) },
+                { $set: updateData }
+            )
+            .then(result => {
+                if (result.matchedCount === 0) {
+                    res.status(404).json({ message: 'No participant found with that ID' });
+                } else {
+                    res.status(200).json({ message: 'Participant updated successfully' });
+                }
+            })
+            .catch(err => {
+                res.status(500).json({ error: 'Could not update participant' });
+            });
+    } else {
+        res.status(400).json({ error: 'Invalid user ID or participant ID' });
+    }
+});
+
+// RUTA PARA ELIMINAR UN PARTICIPANTE DE LA AGENDA DE UN USUARIO
+app.delete('/users/:userId/agenda/:participantId', (req, res) => {
+    const userId = req.params.userId;
+    const participantId = req.params.participantId;
+
+    if (ObjectId.isValid(userId) && ObjectId.isValid(participantId)) {
+        db.collection('agenda')
+            .deleteOne({ _id: ObjectId(participantId), userId: ObjectId(userId) })
+            .then(result => {
+                if (result.deletedCount === 0) {
+                    res.status(404).json({ message: 'No participant found with that ID' });
+                } else {
+                    res.status(200).json({ message: 'Participant deleted successfully' });
+                }
+            })
+            .catch(err => {
+                res.status(500).json({ error: 'Could not delete participant' });
+            });
+    } else {
+        res.status(400).json({ error: 'Invalid user ID or participant ID' });
+    }
+});
+
+
+
 app.post('/send-email', async (req, res) => {
     const { userId, selectedParticipants, emailTitle, emailText, chatbotId } = req.body;
 
@@ -220,7 +272,7 @@ app.post('/send-email', async (req, res) => {
                 const activeId = activeResult.insertedId;
 
                 // Generar el enlace con el ID del objeto "active"
-                const chatbotLink = `https://interactwithchatbot.up.railway.app/${activeId}`;
+                const chatbotLink = `http://localhost:3000/interact/${activeId}`;
 
                 // Configurar opciones del correo electrónico
                 const mailOptions = {
