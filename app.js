@@ -594,6 +594,14 @@ app.get('/users/:userId/active-tests', async (req, res) => {
                 activeTests[i].participantName = 'Unknown'; 
             }
 
+            let questionnaireId = activeTests[i].questionnaireId;
+            let questionnaire = await db.collection('questionnaires').findOne({ _id: ObjectId(questionnaireId) });
+            if (questionnaire) {
+                activeTests[i].questionnaireName = questionnaire.name;
+            } else {
+                activeTests[i].participantName = 'Unknown'; 
+            }
+
             let date = new Date(activeTests[i].date);
             date.setHours(date.getHours()); 
             let formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${('0' + date.getMinutes()).slice(-2)}`;
@@ -634,8 +642,10 @@ app.get('/users/:userId/completed-tests', async (req, res) => {
             let questionnaire = await db.collection('questionnaires').findOne({ _id: ObjectId(questionnaireId) });
             if (questionnaire) {
                 completedTests[i].type = questionnaire.type;
+                completedTests[i].questionnaireName = questionnaire.name;
             } else {
                 completedTests[i].type ='Unknown'; 
+                completedTests[i].questionnaireName = 'Unknown';
             }
 
             let date = new Date(completedTests[i].date);
