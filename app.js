@@ -232,7 +232,30 @@ app.delete('/users/:userId/agenda/:participantId', (req, res) => {
     }
 });
 
+// RUTA PARA OBTENER ID PARTICIPANTE
+app.get('/users/:userId/find-participant', (req, res) => {
+    const userId = req.params.userId;
+    const name = req.query.name;
+    const surname = req.query.surname;
+    const email = req.query.email;
 
+    if (ObjectId.isValid(userId)) {
+        let participant = awaitdb.collection('agenda')
+            .findOne({ userId: ObjectId(userId),
+                name: name,
+                surname: surname,
+                email: email});
+
+        if (participant) {
+            res.status(200).json(participant);
+        } else {
+            res.status(404).json({ message: 'Participant not found' });
+        }
+        
+    } else {
+        res.status(400).json({ error: 'Invalid user ID' });
+    }
+});
 
 app.post('/send-email', async (req, res) => {
     const { userId, selectedParticipants, emailTitle, emailText, chatbotId } = req.body;
