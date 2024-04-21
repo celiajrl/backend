@@ -195,6 +195,12 @@ app.post('/send-email', async (req, res) => {
         const questionnaires = await chatbotController.getLinkedQuestionnaires(chatbotId);
         console.log(questionnaires);
 
+        const questionnairesName = [];
+        for (const questionnaire of questionnaires) {
+            const info = await questionnaireController.getQuestionnaireInfo(userId, questionnaire);
+            questionnairesName.push(info.name);
+        }
+
         // Insertar los datos "active" en la base de datos y enviar correos electrónicos
         const currentDate = new Date();
         const emailPromises = selectedParticipants.map(async participant => {
@@ -204,6 +210,7 @@ app.post('/send-email', async (req, res) => {
                     userId: userId,
                     chatbotId: chatbotId,
                     questionnaires: questionnaires,
+                    questionnairesName: questionnairesName,
                     date: currentDate,
                     participantId: participant.id
                 };
