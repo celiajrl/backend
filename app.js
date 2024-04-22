@@ -233,7 +233,7 @@ app.delete('/users/:userId/agenda/:participantId', (req, res) => {
 });
 
 // RUTA PARA OBTENER ID PARTICIPANTE
-app.post('/users/:userId/find-participant', (req, res) => {
+app.get('/users/:userId/find-participant', (req, res) => {
     const userId = req.params.userId;
     const name = req.query.name;
     const surname = req.query.surname;
