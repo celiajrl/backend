@@ -213,6 +213,7 @@ app.patch('/users/:userId/agenda/:participantId', (req, res) => {
 app.delete('/users/:userId/agenda/:participantId', (req, res) => {
     const userId = req.params.userId;
     const participantId = req.params.participantId;
+    console.log("elimino ");
 
     if (ObjectId.isValid(userId) && ObjectId.isValid(participantId)) {
         db.collection('agenda')
