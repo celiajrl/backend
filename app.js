@@ -690,7 +690,7 @@ app.get('/users/:userId/active-tests', async (req, res) => {
             if (questionnaire) {
                 activeTests[i].questionnaireName = questionnaire.name;
             } else {
-                activeTests[i].participantName = 'Unknown'; 
+                activeTests[i].questionnaireName = 'Unknown'; 
             }
 
             let date = new Date(activeTests[i].date);
