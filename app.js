@@ -416,7 +416,6 @@ app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) =
         }
         console.log("file uloaded to gridfs");
 
-        // Obtener la fecha actual
         const date = new Date();
         // Obtener el día, mes y año
         const day = date.getDate().toString().padStart(2, '0'); // Agregar 0 al principio si es necesario para obtener dos dígitos
