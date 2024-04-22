@@ -416,10 +416,20 @@ app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) =
         }
         console.log("file uloaded to gridfs");
 
+        // Obtener la fecha actual
+        const date = new Date();
+        // Obtener el día, mes y año
+        const day = date.getDate().toString().padStart(2, '0'); // Agregar 0 al principio si es necesario para obtener dos dígitos
+        const month = (date.getMonth() + 1).toString().padStart(2, '0'); // El mes comienza desde 0, por lo que se suma 1
+        const year = date.getFullYear();
+
+        // Formatear la fecha en el formato día/mes/año
+        const formattedDate = `${day}/${month}/${year}`;
+
         const chatbotData = {
             name: req.body.name,
             version: req.body.version || "1.0",
-            date: new Date(),
+            date: formattedDate,
             zipFileId: fileId,
             userId
         };
