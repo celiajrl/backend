@@ -262,7 +262,7 @@ app.post('/send-reminder', async (req, res) => {
     try {
         const db = getDb();
         
-        const participant = await db.collection('participants').findOne({ _id: ObjectId(participantId) });
+        const participant = await db.collection('agenda').findOne({ _id: ObjectId(participantId) });
 
         if (!participant) {
             return res.status(404).json({ error: 'Participant not found' });
