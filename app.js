@@ -213,7 +213,6 @@ app.patch('/users/:userId/agenda/:participantId', (req, res) => {
 app.delete('/users/:userId/agenda/:participantId', (req, res) => {
     const userId = req.params.userId;
     const participantId = req.params.participantId;
-    console.log("elimino ");
 
     if (ObjectId.isValid(userId) && ObjectId.isValid(participantId)) {
         db.collection('agenda')
@@ -254,6 +253,37 @@ app.get('/users/:userId/find-participant', (req, res) => {
             });
     } else {
         res.status(500).json({ error: 'Not a valid user id' });
+    }
+});
+
+app.post('/send-reminder', async (req, res) => {
+    const { testId, participantId } = req.body; 
+
+    try {
+        const db = getDb();
+        
+        const participant = await db.collection('participants').findOne({ _id: ObjectId(participantId) });
+
+        if (!participant) {
+            return res.status(404).json({ error: 'Participant not found' });
+        }
+
+        const chatbotLink = `http://localhost:3000/interact/${testId}`; 
+        const emailTitle = "Reminder to complete your chatbot interaction";
+        const emailText = "This is a reminder to complete your interaction with our chatbot.";
+
+        const mailOptions = {
+            to: participant.email,
+            subject: emailTitle,
+            text: `${emailText}\n\nPlease interact with the chatbot here: ${chatbotLink}`
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent:', info.response);
+        res.status(200).json({ message: 'Reminder email sent successfully.' });
+    } catch (error) {
+        console.error('Error sending email:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -323,7 +353,6 @@ app.post('/send-email', async (req, res) => {
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
-
 
 
 // ROUTE LOGIN
@@ -695,7 +724,7 @@ app.get('/users/:userId/active-tests', async (req, res) => {
 
             let date = new Date(activeTests[i].date);
             date.setHours(date.getHours()); 
-            let formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()+2}:${('0' + date.getMinutes()).slice(-2)}`;
+            let formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()+1}:${('0' + date.getMinutes()).slice(-2)}`;
             activeTests[i].date = formattedDate;
         }
 
