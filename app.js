@@ -741,7 +741,7 @@ app.get('/users/:userId/completed-tests', async (req, res) => {
 
             let date = new Date(completedTests[i].date);
             date.setHours(date.getHours()); 
-            let formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${('0' + date.getMinutes()).slice(-2)}`;
+            let formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours() + 1}:${('0' + date.getMinutes()).slice(-2)}`;
             completedTests[i].date = formattedDate;
             
         }
