@@ -297,7 +297,7 @@ app.post('/send-email', async (req, res) => {
         }
 
         // Obtener cuestionarios asociados al chatbot
-        const questionnaires = await chatbotController.getLinkedQuestionnairsses(chatbotId);
+        const questionnaires = await chatbotController.getLinkedQuestionnaires(chatbotId);
         console.log(questionnaires);
 
         const questionnairesName = {};
