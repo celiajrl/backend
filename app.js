@@ -288,7 +288,7 @@ app.post('/send-reminder', async (req, res) => {
 });
 
 app.post('/send-email', async (req, res) => {
-    const { userId, selectedParticipants, emailTitle, emailText, chatbotId } = req.body;
+    const { userId, selectedParticipants, emailTitle, emailText, chatbotId, chatbotMessage } = req.body;
 
     try {
         const chatbot = await chatbotController.getChatbotById(chatbotId);
@@ -320,7 +320,8 @@ app.post('/send-email', async (req, res) => {
                     questionnaires: questionnaires,
                     questionnairesName: questionnairesName,
                     date: localDate,
-                    participantId: participant.id
+                    participantId: participant.id,
+                    chatbotMessage: chatbotMessage
                 };
                 const activeResult = await db.collection('active').insertOne(activeData);
 
