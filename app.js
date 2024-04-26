@@ -297,14 +297,15 @@ app.post('/send-email', async (req, res) => {
         }
 
         // Obtener cuestionarios asociados al chatbot
-        const questionnaires = await chatbotController.getLinkedQuestionnaires(chatbotId);
+        const questionnaires = await chatbotController.getLinkedQuestionnairsses(chatbotId);
         console.log(questionnaires);
 
-        const questionnairesName = await Promise.all(questionnaires.map(async (questionnaire) => {
+        const questionnairesName = {};
+        for (const questionnaire of questionnaires) {
             const info = await questionnaireController.getQuestionnaireInfo(userId, questionnaire);
-            return { questionnaire: questionnaire, name: info.name };
-        }));
-        
+            questionnairesName[questionnaire] = info.name; 
+        }
+
 
         // Insertar los datos "active" en la base de datos y enviar correos electrónicos
         const currentDate = new Date();
