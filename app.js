@@ -308,7 +308,9 @@ app.post('/send-email', async (req, res) => {
 
 
         // Insertar los datos "active" en la base de datos y enviar correos electrónicos
-        const currentDate = new Date();
+        const localDate = new Date().toLocaleString('es-ES', {
+            timeZone: 'Europe/Madrid'  
+        });
         const emailPromises = selectedParticipants.map(async participant => {
             try {
                 // Insertar datos "active" en la base de datos
@@ -317,7 +319,7 @@ app.post('/send-email', async (req, res) => {
                     chatbotId: chatbotId,
                     questionnaires: questionnaires,
                     questionnairesName: questionnairesName,
-                    date: currentDate,
+                    date: localDate,
                     participantId: participant.id
                 };
                 const activeResult = await db.collection('active').insertOne(activeData);
@@ -723,10 +725,6 @@ app.get('/users/:userId/active-tests', async (req, res) => {
                 activeTests[i].questionnaireName = 'Unknown'; 
             }
 
-            let date = new Date(activeTests[i].date);
-            date.setHours(date.getHours()); 
-            let formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()+1}:${('0' + date.getMinutes()).slice(-2)}`;
-            activeTests[i].date = formattedDate;
         }
 
         res.status(200).json(activeTests);
