@@ -681,25 +681,21 @@ app.patch('/users/:userId/chatbots/:chatbotId/unlink-questionnaire', async (req,
     }
 });
 
-app.post('/users/:userId/chatbots/:chatbotId/update-order', async (req, res) => {
+app.patch('/users/:userId/chatbots/:chatbotId/update-order', async (req, res) => {
     const chatbotId = req.params.chatbotId;
-    const { orderData } = req.body; // Este debe ser el array de mapeo entre id del cuestionario y el orden
+    const updates= {
+        orderData: req.body.orderData
+    };
 
     try {
-        const db = getDb();
-        // Suponemos que 'chatbots' es el nombre de tu colección donde guardas los datos del chatbot
-        const result = await db.collection('chatbots').updateOne(
-            { _id: ObjectId(chatbotId) }, // Filtra por ID del chatbot
-            { $set: { questionnaireOrder: orderData } } // Actualiza el campo de orden de cuestionarios
-        );
+        const success = await chatbotController.updateChatbot(chatbotId, updates);
 
-        if (result.matchedCount === 0) {
-            res.status(404).json({ error: 'Chatbot not found' });
+        if (success) {
+            res.status(200).json({ message: 'Chatbot updated successfully' });
         } else {
-            res.status(200).json({ message: 'Order updated successfully' });
+            res.status(404).json({ message: 'Chatbot not found' });
         }
     } catch (error) {
-        console.error('Error updating chatbot order:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
