@@ -681,6 +681,30 @@ app.patch('/users/:userId/chatbots/:chatbotId/unlink-questionnaire', async (req,
     }
 });
 
+app.post('/users/:userId/chatbots/:chatbotId/update-order', async (req, res) => {
+    const { userId, chatbotId } = req.params;
+    const { orderData } = req.body; // Este debe ser el array de mapeo entre id del cuestionario y el orden
+
+    try {
+        const db = getDb();
+        // Suponemos que 'chatbots' es el nombre de tu colección donde guardas los datos del chatbot
+        const result = await db.collection('chatbots').updateOne(
+            { _id: chatbotId }, // Filtra por ID del chatbot
+            { $set: { questionnaireOrder: orderData } } // Actualiza el campo de orden de cuestionarios
+        );
+
+        if (result.matchedCount === 0) {
+            res.status(404).json({ error: 'Chatbot not found' });
+        } else {
+            res.status(200).json({ message: 'Order updated successfully' });
+        }
+    } catch (error) {
+        console.error('Error updating chatbot order:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
 
 // QUESTIONNAIRES ASSOCIATED TO CHATBOT
 app.get('/users/:userId/chatbots/:chatbotId/questionnaires', async (req, res) => {
@@ -694,6 +718,8 @@ app.get('/users/:userId/chatbots/:chatbotId/questionnaires', async (req, res) =>
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
+
 
 //ROUTE FOR OBTAINING ACTIVE TESTS
 app.get('/users/:userId/active-tests', async (req, res) => {
