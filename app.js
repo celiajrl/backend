@@ -682,7 +682,7 @@ app.patch('/users/:userId/chatbots/:chatbotId/unlink-questionnaire', async (req,
 });
 
 app.post('/users/:userId/chatbots/:chatbotId/update-order', async (req, res) => {
-    const { userId, chatbotId } = req.params;
+    const chatbotId = req.params.chatbotId;
     const { orderData } = req.body; // Este debe ser el array de mapeo entre id del cuestionario y el orden
 
     try {
