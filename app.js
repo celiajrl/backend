@@ -689,7 +689,7 @@ app.post('/users/:userId/chatbots/:chatbotId/update-order', async (req, res) => 
         const db = getDb();
         // Suponemos que 'chatbots' es el nombre de tu colección donde guardas los datos del chatbot
         const result = await db.collection('chatbots').updateOne(
-            { _id: chatbotId }, // Filtra por ID del chatbot
+            { _id: ObjectId(chatbotId) }, // Filtra por ID del chatbot
             { $set: { questionnaireOrder: orderData } } // Actualiza el campo de orden de cuestionarios
         );
 
