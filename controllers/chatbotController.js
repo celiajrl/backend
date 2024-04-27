@@ -112,6 +112,19 @@ async function getLinkedQuestionnaires(chatbotId) {
     }
 }
 
+async function getOrder(chatbotId) {
+    try {
+        const db = getDb();
+
+        const chatbot = await db.collection('chatbots').findOne({ _id: ObjectId(chatbotId) });
+
+        return chatbot.orderData || [];
+    } catch (error) {
+        console.error(error);
+        throw new Error('Error al obtener el orden de los cuestionarios');
+    }
+}
+
 async function getChatbotsByQuestionnaireId(questionnaireId) {
     try {
         const db = getDb();
@@ -135,6 +148,7 @@ module.exports = {
     linkQuestionnaire,
     unlinkQuestionnaire,
     getLinkedQuestionnaires,
+    getOrder,
     getChatbotsByQuestionnaireId
 };
 

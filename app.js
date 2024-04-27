@@ -300,6 +300,8 @@ app.post('/send-email', async (req, res) => {
         const questionnaires = await chatbotController.getLinkedQuestionnaires(chatbotId);
         console.log(questionnaires);
 
+        const questionnaireOrder = await chatbotController.getOrder(chatbotId);
+
         const questionnairesName = {};
         for (const questionnaire of questionnaires) {
             const info = await questionnaireController.getQuestionnaireInfo(userId, questionnaire);
@@ -319,6 +321,7 @@ app.post('/send-email', async (req, res) => {
                     chatbotId: chatbotId,
                     questionnaires: questionnaires,
                     questionnairesName: questionnairesName,
+                    order: questionnaireOrder,
                     date: localDate,
                     participantId: participant.id,
                     chatbotMessage: chatbotMessage
