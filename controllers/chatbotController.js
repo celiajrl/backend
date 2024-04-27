@@ -45,11 +45,8 @@ async function updateChatbot(chatbotId, updates) {
         { $set: updates }
     );
 
-    if (result.modifiedCount === 1) {
-        return true;
-    } else {
-        return false;
-    }
+    return true;
+
 }
 
 
