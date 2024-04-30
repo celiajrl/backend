@@ -4,6 +4,7 @@ const { ObjectId } = require('mongodb');
 const { connectToDb, getDb } = require('./db');
 const { uploadFileToGridFS } = require('./db');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');  
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const AdmZip = require('adm-zip');
@@ -837,17 +838,19 @@ app.post('/forgot-password', async (req, res) => {
         return res.status(400).json({ message: 'Email is required' });
     }
 
+    const db = getDb();
     try {
         // Buscar el usuario por email
         const user = await db.collection('users').findOne({ email });
         if (!user) {
-            // Puedes decidir no informar al usuario si el correo no existe por motivos de seguridad
+            // Informar al usuario que se enviará un correo si la dirección está registrada
             return res.status(200).json({ message: 'If your email address is registered, you will receive a password reset email shortly.' });
         }
 
-        // Generar una nueva contraseña
+        // Generar una nueva contraseña aleatoria
         const newPassword = generateRandomPassword();
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
         // Actualizar la contraseña del usuario en la base de datos
         await db.collection('users').updateOne({ email }, { $set: { passwordHash: hashedPassword } });
@@ -864,28 +867,24 @@ app.post('/forgot-password', async (req, res) => {
 
 // Función para generar una contraseña aleatoria
 function generateRandomPassword() {
-    return crypto.randomBytes(8).toString('hex');
+    return crypto.randomBytes(8).toString('hex');  // Genera una cadena hexadecimal segura
 }
 
 // Función para enviar el correo electrónico de restablecimiento de contraseña
 async function sendPasswordResetEmail(email, newPassword) {
     const mailOptions = {
-        from: 'chatbotevaluator@gmail.com',
-        to: email,
-        subject: 'Your New Password',
-        text: `Your new password is: ${newPassword}\n`
-    };
+		    to: email,
+		    subject: 'Your New Password',
+        	    text: `Your new password is: ${newPassword}. Please change it upon login.`
+		};
 
     try {
         const info = await transporter.sendMail(mailOptions);
         console.log('Email sent:', info.response);
     } catch (error) {
         console.error('Failed to send email', error);
-        throw error; // Re-throw the error to handle it in the calling function
+        throw error;  // Re-throw the error to handle it in the calling function
     }
 }
-
-
-
 
 module.exports = app;
