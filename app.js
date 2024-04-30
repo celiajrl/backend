@@ -332,14 +332,14 @@ app.post('/send-email', async (req, res) => {
                 const activeId = activeResult.insertedId;
 
                 // Generar el enlace con el ID del objeto "active"
-                const chatbotLink = `http://localhost:3000/interact/${activeId}`;
+                // Codificar el URL para asegurarse de que los caracteres especiales no causen problemas
+		const encodedChatbotLink = encodeURI(`http://localhost:3000/interact/${activeId}`);
 
-                // Configurar opciones del correo electrónico
-                const mailOptions = {
-                    to: participant.email,
-                    subject: emailTitle,
-                    text: `${emailText}\n\nChat with the chatbot: ${chatbotLink}`,
-                };
+		const mailOptions = {
+		    to: participant.email,
+		    subject: emailTitle,
+		    html: `${emailText}<br><br><a href="${encodedChatbotLink}">Chat with the chatbot</a>`,
+		};
 
                 // Enviar correo electrónico
                 const info = await transporter.sendMail(mailOptions);
