@@ -875,7 +875,7 @@ async function sendPasswordResetEmail(email, newPassword) {
     const mailOptions = {
 		    to: email,
 		    subject: 'Your New Password',
-        	    text: `Your new password is: ${newPassword}. Please change it upon login.`
+        	    text: `Your new password is: ${newPassword}`
 		};
 
     try {
