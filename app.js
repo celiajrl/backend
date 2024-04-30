@@ -830,6 +830,62 @@ app.get('/results', async (req, res) => {
 });
 
 
+// Forgot Password Endpoint
+app.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+    }
+
+    try {
+        // Buscar el usuario por email
+        const user = await db.collection('users').findOne({ email });
+        if (!user) {
+            // Puedes decidir no informar al usuario si el correo no existe por motivos de seguridad
+            return res.status(200).json({ message: 'If your email address is registered, you will receive a password reset email shortly.' });
+        }
+
+        // Generar una nueva contraseña
+        const newPassword = generateRandomPassword();
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Actualizar la contraseña del usuario en la base de datos
+        await db.collection('users').updateOne({ email }, { $set: { passwordHash: hashedPassword } });
+
+        // Enviar correo electrónico con la nueva contraseña
+        await sendPasswordResetEmail(email, newPassword);
+
+        res.status(200).json({ message: 'If your email address is registered, you will receive a password reset email shortly.' });
+    } catch (error) {
+        console.error('Failed to reset password', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Función para generar una contraseña aleatoria
+function generateRandomPassword() {
+    return crypto.randomBytes(8).toString('hex');
+}
+
+// Función para enviar el correo electrónico de restablecimiento de contraseña
+async function sendPasswordResetEmail(email, newPassword) {
+    const mailOptions = {
+        from: 'chatbotevaluator@gmail.com',
+        to: email,
+        subject: 'Your New Password',
+        text: `Your new password is: ${newPassword}\n`
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent:', info.response);
+    } catch (error) {
+        console.error('Failed to send email', error);
+        throw error; // Re-throw the error to handle it in the calling function
+    }
+}
+
+
 
 
 module.exports = app;
