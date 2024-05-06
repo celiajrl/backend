@@ -913,8 +913,8 @@ app.get('/chatbot/:chatbotId/questionnaire/:questionnaireId/complete', async (re
 
         // Buscar todas las entradas 'complete' para un chatbot y cuestionario específico
         const completeEntries = await db.collection('complete').find({
-            chatbotId: ObjectId(chatbotId),
-            questionnaireId: ObjectId(questionnaireId)
+            chatbotId: chatbotId,
+            questionnaireId: questionnaireId
         }).toArray();
 
         if (completeEntries.length === 0) {
