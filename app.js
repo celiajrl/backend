@@ -530,13 +530,13 @@ app.get('/users/:userId/chatbots/:chatbotId', async (req, res) => {
 
 // DELETE CHATBOT BY ID
 app.delete('/users/:userId/chatbots/:chatbotId', async (req, res) => {
-    const chatbotId = req.params.chatbotId;
+    const { chatbotId } = req.params;
 
     try {
         const result = await chatbotController.deleteChatbot(chatbotId);
 
-        if (result.success) {
-            res.status(result.status).json({ message: result.message });
+        if (result.status === 200) {
+            res.status(200).json({ message: result.message });
         } else {
             res.status(result.status).json({ error: result.message });
         }
@@ -545,6 +545,7 @@ app.delete('/users/:userId/chatbots/:chatbotId', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 
 // EDIT CHATBOT BY ID
@@ -595,7 +596,6 @@ app.get('/users/:userId/questionnaires', async (req, res) => {
     }
 });
 
-// DELETE BY ID
 app.delete('/users/:userId/questionnaires/:questionnaireId', async (req, res) => {
     const questionnaireId = req.params.questionnaireId;
 
@@ -603,24 +603,31 @@ app.delete('/users/:userId/questionnaires/:questionnaireId', async (req, res) =>
         // Obtener los chatbots vinculados al cuestionario
         const chatbots = await chatbotController.getChatbotsByQuestionnaireId(questionnaireId);
 
-        // Desvincular el cuestionario de todos los chatbots
-        for (const chatbot of chatbots) {
-            await chatbotController.unlinkQuestionnaire(chatbot._id, questionnaireId);
+        if (chatbots.length > 0) {
+            // Desvincular el cuestionario de todos los chatbots
+            for (const chatbot of chatbots) {
+                const unlinkResult = await chatbotController.unlinkQuestionnaire(chatbot._id, questionnaireId);
+                if (!unlinkResult.success) {
+                    console.error(`Failed to unlink questionnaire ${questionnaireId} from chatbot ${chatbot._id}`);
+                    // Considerar si debe seguir adelante o no, aquí se sigue adelante
+                }
+            }
         }
 
         // Eliminar el cuestionario después de desvincularlo de los chatbots
         const deleted = await questionnaireController.deleteQuestionnaire(questionnaireId);
 
         if (deleted.success) {
-            res.status(200).json({ message: deleted.message });
+            res.status(200).json({ message: 'Questionnaire deleted successfully' });
         } else {
-            res.status(404).json({ error: deleted.message });
+            res.status(deleted.status).json({ error: deleted.message });
         }
     } catch (error) {
-        console.error(error);
+        console.error('Unexpected error in deleting questionnaire:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 
 

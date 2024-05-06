@@ -24,34 +24,34 @@ async function getChatbotById(chatbotId) {
     return chatbot;
 }
 
+// En chatbotController.js
 async function deleteChatbot(chatbotId) {
     const db = getDb();
 
     try {
-        // Comprobar si el chatbot está en 'active'
-        const isActive = await db.collection('active').findOne({ chatbotId: chatbotId });
-        if (isActive) {
-            return { success: false, status: 400, message: 'Cannot delete chatbot as it is part of an active test.' };
+        const activeCheck = await db.collection('active').findOne({ chatbotId: chatbotId });
+        if (activeCheck) {
+            return { status: 400, message: 'Cannot delete chatbot as it is part of an active test.' };
         }
 
-        // Comprobar si el chatbot está en 'complete'
-        const isComplete = await db.collection('complete').findOne({ chatbotId: chatbotId });
-        if (isComplete) {
-            return { success: false, status: 400, message: 'Cannot delete chatbot as it has completed tests.' };
+        const completeCheck = await db.collection('complete').findOne({ chatbotId: chatbotId });
+        if (completeCheck) {
+            return { status: 400, message: 'Cannot delete chatbot as it has completed tests.' };
         }
 
-        // Si no está en 'active' ni en 'complete', proceder a eliminar
         const result = await db.collection('chatbots').deleteOne({ _id: ObjectId(chatbotId) });
         if (result.deletedCount === 0) {
-            return { success: false, status: 404, message: 'No chatbot found with that ID' };
-        } else {
-            return { success: true, status: 200, message: 'Chatbot deleted successfully' };
+            return { status: 404, message: 'No chatbot found with that ID' };
         }
-    } catch (err) {
-        console.error('Error deleting chatbot:', err);
-        return { success: false, status: 500, message: 'Could not delete chatbot' };
+
+        return { status: 200, message: 'Chatbot deleted successfully' };
+    } catch (error) {
+        console.error('Error deleting chatbot:', error);
+        throw new Error('Failed to delete chatbot due to internal server error.');
     }
 }
+
+
 
 
 
