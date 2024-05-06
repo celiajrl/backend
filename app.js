@@ -611,10 +611,10 @@ app.delete('/users/:userId/questionnaires/:questionnaireId', async (req, res) =>
         // Eliminar el cuestionario después de desvincularlo de los chatbots
         const deleted = await questionnaireController.deleteQuestionnaire(questionnaireId);
 
-        if (deleted) {
-            res.status(200).json({ message: 'Questionnaire deleted successfully' });
+        if (deleted.success) {
+            res.status(200).json({ message: deleted.message });
         } else {
-            res.status(404).json({ error: 'Questionnaire not found' });
+            res.status(404).json({ error: deleted.message });
         }
     } catch (error) {
         console.error(error);
