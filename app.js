@@ -211,28 +211,6 @@ app.patch('/users/:userId/agenda/:participantId', (req, res) => {
     }
 });
 
-// RUTA PARA ELIMINAR UN PARTICIPANTE DE LA AGENDA DE UN USUARIO
-app.delete('/users/:userId/agenda/:participantId', (req, res) => {
-    const userId = req.params.userId;
-    const participantId = req.params.participantId;
-
-    if (ObjectId.isValid(userId) && ObjectId.isValid(participantId)) {
-        db.collection('agenda')
-            .deleteOne({ _id: ObjectId(participantId), userId: ObjectId(userId) })
-            .then(result => {
-                if (result.deletedCount === 0) {
-                    res.status(404).json({ message: 'No participant found with that ID' });
-                } else {
-                    res.status(200).json({ message: 'Participant deleted successfully' });
-                }
-            })
-            .catch(err => {
-                res.status(500).json({ error: 'Could not delete participant' });
-            });
-    } else {
-        res.status(400).json({ error: 'Invalid user ID or participant ID' });
-    }
-});
 
 // RUTA PARA ELIMINAR UN PARTICIPANTE DE LA AGENDA DE UN USUARIO
 app.delete('/users/:userId/agenda/:participantId', async (req, res) => {
