@@ -38,14 +38,34 @@ async function getQuestionnaireInfoWOUser(questionnaireId) {
 
 async function deleteQuestionnaire(questionnaireId) {
     const db = getDb();
-    const result = await db.collection('questionnaires').deleteOne({ _id: ObjectId(questionnaireId) });
 
-    if (result.deletedCount === 1) {
-        return true;
+    // Comprobar si el cuestionario está en 'active'
+    const active = await db.collection('active').findOne({ "questionnaires": { $elemMatch: { $oid: questionnaireId } } });
+    if (active) {
+        return { success: false, status: 400, message: 'Cannot delete questionnaire as it is part of an active test.' };
+    }
+
+    // Comprobar si el cuestionario está en 'complete'
+    const complete = await db.collection('complete').findOne({ questionnaireId: questionnaireId });
+    if (complete) {
+        return { success: false, status: 400, message: 'Cannot delete questionnaire as it has completed instances.' };
+    }
+
+    // Comprobar si el cuestionario tiene resultados asociados en 'results'
+    const results = await db.collection('results').findOne({ questionnaireId: questionnaireId });
+    if (results) {
+        return { success: false, status: 400, message: 'Cannot delete questionnaire as it has associated results.' };
+    }
+
+    // Si no está en 'active', 'complete', ni tiene resultados asociados, proceder a eliminar
+    const result = await db.collection('questionnaires').deleteOne({ _id: ObjectId(questionnaireId) });
+    if (result.deletedCount === 0) {
+        return { success: false, status: 404, message: 'No questionnaire found with that ID' };
     } else {
-        return false;
+        return { success: true, status: 200, message: 'Questionnaire deleted successfully' };
     }
 }
+
 
 async function updateQuestionnaire(questionnaireId, updates) {
     const db = getDb();
