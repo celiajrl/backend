@@ -888,5 +888,78 @@ async function sendPasswordResetEmail(email, newPassword) {
     }
 }
 
+app.get('/chatbot/:chatbotId/questionnaire/:questionnaireId/complete', async (req, res) => {
+    const { chatbotId, questionnaireId } = req.params;
+
+    try {
+        // Buscar el cuestionario para obtener las preguntas
+        const questionnaire = await db.collection('questionnaires').findOne({ _id: ObjectId(questionnaireId) });
+        if (!questionnaire) {
+            return res.status(404).json({ message: 'Questionnaire not found' });
+        }
+
+        // Preparar las preguntas para fácil acceso por índice
+        let questionMap = {};
+        if (questionnaire.type === "preconfigured") {
+            questionnaire.questions.forEach((q, index) => {
+                questionMap[index * 2 + 1] = q.positive;
+                questionMap[index * 2 + 2] = q.negative;
+            });
+        } else { // custom questionnaire handling
+            questionnaire.questions.forEach((q, index) => {
+                questionMap[index + 1] = q.question; // Custom questionnaires use direct question text
+            });
+        }
+
+        // Buscar todas las entradas 'complete' para un chatbot y cuestionario específico
+        const completeEntries = await db.collection('complete').find({
+            chatbotId: ObjectId(chatbotId),
+            questionnaireId: ObjectId(questionnaireId)
+        }).toArray();
+
+        if (completeEntries.length === 0) {
+            return res.status(404).json({ message: 'No completions found for this chatbot and questionnaire' });
+        }
+
+        // Preparar datos para cada entrada completa
+        const data = await Promise.all(completeEntries.map(async (entry) => {
+            // Buscar datos del participante
+            const participant = await db.collection('agenda').findOne({_id: ObjectId(entry.participantId)});
+            if (!participant) {
+                return { participant: 'Unknown', responses: {} };
+            }
+
+            // Buscar respuestas en la colección de resultados
+            const results = await db.collection('results').findOne({_id: ObjectId(entry.resultId)});
+            if (!results) {
+                return { participant: participant.email, responses: {} };
+            }
+
+            // Procesar respuestas usando el questionMap
+            const processedResponses = {};
+            Object.keys(results.answers).forEach(key => {
+                const response = results.answers[key];
+                let cleanResponse = response;
+                if (response instanceof Object && response['$numberInt']) {
+                    cleanResponse = response['$numberInt'];
+                } else if (Array.isArray(response)) {
+                    cleanResponse = response.join(", ");
+                }
+                processedResponses[questionMap[key]] = cleanResponse;
+            });
+
+            return {
+                participant: participant.email,
+                responses: processedResponses
+            };
+        }));
+
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error fetching completion data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 
 module.exports = app;
