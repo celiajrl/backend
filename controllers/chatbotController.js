@@ -29,13 +29,13 @@ async function deleteChatbot(chatbotId) {
 
     try {
         // Comprobar si el chatbot está en 'active'
-        const isActive = await db.collection('active').findOne({ chatbotId: ObjectId(chatbotId) });
+        const isActive = await db.collection('active').findOne({ chatbotId: chatbotId });
         if (isActive) {
             return { success: false, status: 400, message: 'Cannot delete chatbot as it is part of an active test.' };
         }
 
         // Comprobar si el chatbot está en 'complete'
-        const isComplete = await db.collection('complete').findOne({ chatbotId: ObjectId(chatbotId) });
+        const isComplete = await db.collection('complete').findOne({ chatbotId: chatbotId });
         if (isComplete) {
             return { success: false, status: 400, message: 'Cannot delete chatbot as it has completed tests.' };
         }
