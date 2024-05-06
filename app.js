@@ -234,6 +234,42 @@ app.delete('/users/:userId/agenda/:participantId', (req, res) => {
     }
 });
 
+// RUTA PARA ELIMINAR UN PARTICIPANTE DE LA AGENDA DE UN USUARIO
+app.delete('/users/:userId/agenda/:participantId', async (req, res) => {
+    const userId = req.params.userId;
+    const participantId = req.params.participantId;
+
+    if (!ObjectId.isValid(userId) || !ObjectId.isValid(participantId)) {
+        return res.status(400).json({ error: 'Invalid user ID or participant ID' });
+    }
+
+    try {
+        // Comprobar si el participante está en 'active'
+        const isActive = await db.collection('active').findOne({ participantId: participantId });
+        if (isActive) {
+            return res.status(400).json({ message: 'Cannot delete participant as they are part of an active test.' });
+        }
+
+        // Comprobar si el participante está en 'complete'
+        const isComplete = await db.collection('complete').findOne({ participantId: participantId });
+        if (isComplete) {
+            return res.status(400).json({ message: 'Cannot delete participant as they have completed tests.' });
+        }
+
+        // Si no está en 'active' ni en 'complete', proceder a eliminar
+        const result = await db.collection('agenda').deleteOne({ _id: ObjectId(participantId), userId: ObjectId(userId) });
+        if (result.deletedCount === 0) {
+            res.status(404).json({ message: 'No participant found with that ID' });
+        } else {
+            res.status(200).json({ message: 'Participant deleted successfully' });
+        }
+    } catch (err) {
+        console.error('Error deleting participant:', err);
+        res.status(500).json({ error: 'Could not delete participant' });
+    }
+});
+
+
 // RUTA PARA OBTENER ID PARTICIPANTE
 app.get('/users/:userId/find-participant', (req, res) => {
     const userId = req.params.userId;
