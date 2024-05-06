@@ -24,17 +24,35 @@ async function getChatbotById(chatbotId) {
     return chatbot;
 }
 
-// Función para eliminar un chatbot por su ID
 async function deleteChatbot(chatbotId) {
     const db = getDb();
-    const result = await db.collection('chatbots').deleteOne({ _id: ObjectId(chatbotId) });
 
-    if (result.deletedCount === 1) {
-        return true; 
-    } else {
-        return false; // No se encontró el chatbot con el ID especificado
+    try {
+        // Comprobar si el chatbot está en 'active'
+        const isActive = await db.collection('active').findOne({ chatbotId: ObjectId(chatbotId) });
+        if (isActive) {
+            return { success: false, status: 400, message: 'Cannot delete chatbot as it is part of an active test.' };
+        }
+
+        // Comprobar si el chatbot está en 'complete'
+        const isComplete = await db.collection('complete').findOne({ chatbotId: ObjectId(chatbotId) });
+        if (isComplete) {
+            return { success: false, status: 400, message: 'Cannot delete chatbot as it has completed tests.' };
+        }
+
+        // Si no está en 'active' ni en 'complete', proceder a eliminar
+        const result = await db.collection('chatbots').deleteOne({ _id: ObjectId(chatbotId) });
+        if (result.deletedCount === 0) {
+            return { success: false, status: 404, message: 'No chatbot found with that ID' };
+        } else {
+            return { success: true, status: 200, message: 'Chatbot deleted successfully' };
+        }
+    } catch (err) {
+        console.error('Error deleting chatbot:', err);
+        return { success: false, status: 500, message: 'Could not delete chatbot' };
     }
 }
+
 
 
 async function updateChatbot(chatbotId, updates) {

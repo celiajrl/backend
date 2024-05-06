@@ -533,18 +533,19 @@ app.delete('/users/:userId/chatbots/:chatbotId', async (req, res) => {
     const chatbotId = req.params.chatbotId;
 
     try {
-        const success = await chatbotController.deleteChatbot(chatbotId);
+        const result = await chatbotController.deleteChatbot(chatbotId);
 
-        if (success) {
-            res.status(200).json({ message: 'Chatbot deleted successfully' });
+        if (result.success) {
+            res.status(result.status).json({ message: result.message });
         } else {
-            res.status(404).json({ message: 'Chatbot not found' });
+            res.status(result.status).json({ error: result.message });
         }
     } catch (error) {
-        console.error(error);
+        console.error('Unexpected error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 // EDIT CHATBOT BY ID
 app.patch('/users/:userId/chatbots/:chatbotId', async (req, res) => {
