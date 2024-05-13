@@ -1,40 +1,58 @@
+/**
+ * chatbotController.js
+ *
+ * Descripción: Este módulo contiene las funciones necesarias para la gestión de chatbots en la base de datos.
+ *              Proporciona funcionalidades para crear, actualizar, eliminar, y consultar información de chatbots,
+ *              así como gestionar su relación con cuestionarios. Estas funciones facilitan la interacción con la
+ *              colección de chatbots en la base de datos MongoDB.
+ *
+ * Año: 2024
+ *
+ * Autora: Celia Jiménez
+ */
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 
-
-// Función de creación de chatbots, devuelve ID
+/**
+ * Crea un nuevo chatbot en la base de datos y devuelve el ID del chatbot insertado.
+ */
 async function createChatbot(chatbotData) {
     const db = getDb();
     const result = await db.collection('chatbots').insertOne(chatbotData);
     return result.insertedId;
 }
 
-// Función para obtener todos los chatbots de un usuario por ID de usuario
+/**
+ * Obtiene todos los chatbots asociados a un ID de usuario específico.
+ */
 async function getChatbotsByUserId(userId) {
     const db = getDb();
     const chatbots = await db.collection('chatbots').find({ userId }).toArray();
     return chatbots;
 }
 
-// Función para obtener chatbot por id
+/**
+ * Obtiene un chatbot por su ID.
+ */
 async function getChatbotById(chatbotId) {
-    console.log(chatbotId);
     const db = getDb();
     const chatbot = await db.collection('chatbots').findOne({ _id: ObjectId(chatbotId) });
     return chatbot;
 }
 
-// En chatbotController.js
+/**
+ * Elimina un chatbot por su ID. Verifica si el chatbot está activo o ha completado pruebas
+ * antes de permitir la eliminación.
+ */
 async function deleteChatbot(chatbotId) {
     const db = getDb();
-
     try {
-        const activeCheck = await db.collection('active').findOne({ chatbotId: chatbotId });
+        const activeCheck = await db.collection('active').findOne({ chatbotId });
         if (activeCheck) {
             return { status: 400, message: 'Cannot delete chatbot as it is part of an active test.' };
         }
 
-        const completeCheck = await db.collection('complete').findOne({ chatbotId: chatbotId });
+        const completeCheck = await db.collection('complete').findOne({ chatbotId });
         if (completeCheck) {
             return { status: 400, message: 'Cannot delete chatbot as it has completed tests.' };
         }
@@ -51,108 +69,75 @@ async function deleteChatbot(chatbotId) {
     }
 }
 
-
-
-
-
+/**
+ * Actualiza la información de un chatbot dado su ID.
+ */
 async function updateChatbot(chatbotId, updates) {
     const db = getDb();
-
-    const result = await db.collection('chatbots').updateOne(
-        { _id: ObjectId(chatbotId) },
-        { $set: updates }
-    );
-
-    return true;
-
+    const result = await db.collection('chatbots').updateOne({ _id: ObjectId(chatbotId) }, { $set: updates });
+    return result.modifiedCount === 1;
 }
 
-
+/**
+ * Vincula un cuestionario a un chatbot existente.
+ */
 async function linkQuestionnaire(chatbotId, questionnaireId) {
     const db = getDb();
-
     try {
-        const chatbotObjectId = ObjectId(chatbotId);
-        const questionnaireObjectId = ObjectId(questionnaireId);
-
         const result = await db.collection('chatbots').updateOne(
-            { _id: chatbotObjectId },
-            { $push: { linkedQuestionnaires: questionnaireObjectId } }
+            { _id: ObjectId(chatbotId) },
+            { $push: { linkedQuestionnaires: ObjectId(questionnaireId) } }
         );
-
-        if (result.modifiedCount === 1) {
-            return true;
-        } else {
-            return false; // No se encontró el chatbot con el ID especificado
-        }
+        return result.modifiedCount === 1;
     } catch (error) {
         console.error(error);
         return false;
     }
 }
 
+/**
+ * Desvincula un cuestionario de un chatbot existente.
+ */
 async function unlinkQuestionnaire(chatbotId, questionnaireId) {
     const db = getDb();
-
     try {
-        const chatbotObjectId = ObjectId(chatbotId);
-        const questionnaireObjectId = ObjectId(questionnaireId);
-
         const result = await db.collection('chatbots').updateOne(
-            { _id: chatbotObjectId },
-            { $pull: { linkedQuestionnaires: questionnaireObjectId } }
+            { _id: ObjectId(chatbotId) },
+            { $pull: { linkedQuestionnaires: ObjectId(questionnaireId) } }
         );
-
-        if (result.modifiedCount === 1) {
-            return true;
-        } else {
-            return false; // No se encontró el chatbot con el ID especificado
-        }
+        return result.modifiedCount === 1;
     } catch (error) {
         console.error(error);
         return false;
     }
 }
 
+/**
+ * Obtiene la lista de cuestionarios vinculados a un chatbot.
+ */
 async function getLinkedQuestionnaires(chatbotId) {
-    try {
-        const db = getDb();
-
-        const chatbot = await db.collection('chatbots').findOne({ _id: ObjectId(chatbotId) });
-
-        return chatbot.linkedQuestionnaires || [];
-    } catch (error) {
-        console.error(error);
-        throw new Error('Error al obtener los cuestionarios vinculados al chatbot');
-    }
+    const db = getDb();
+    const chatbot = await db.collection('chatbots').findOne({ _id: ObjectId(chatbotId) });
+    return chatbot.linkedQuestionnaires || [];
 }
 
+/**
+ * Obtiene el orden de presentación de los cuestionarios vinculados a un chatbot.
+ */
 async function getOrder(chatbotId) {
-    try {
-        const db = getDb();
-
-        const chatbot = await db.collection('chatbots').findOne({ _id: ObjectId(chatbotId) });
-
-        return chatbot.orderData || [];
-    } catch (error) {
-        console.error(error);
-        throw new Error('Error al obtener el orden de los cuestionarios');
-    }
+    const db = getDb();
+    const chatbot = await db.collection('chatbots').findOne({ _id: ObjectId(chatbotId) });
+    return chatbot.orderData || [];
 }
 
+/**
+ * Obtiene todos los chatbots que tienen un cuestionario específico vinculado.
+ */
 async function getChatbotsByQuestionnaireId(questionnaireId) {
-    try {
-        const db = getDb();
-        const chatbots = await db.collection('chatbots').find({ linkedQuestionnaires: ObjectId(questionnaireId) }).toArray();
-        return chatbots;
-    } catch (error) {
-        console.error(error);
-        throw new Error('Error al obtener los chatbots vinculados al cuestionario');
-    }
+    const db = getDb();
+    const chatbots = await db.collection('chatbots').find({ linkedQuestionnaires: ObjectId(questionnaireId) }).toArray();
+    return chatbots;
 }
-
-
-
 
 module.exports = {
     createChatbot,
@@ -166,4 +151,3 @@ module.exports = {
     getOrder,
     getChatbotsByQuestionnaireId
 };
-

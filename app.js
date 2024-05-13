@@ -1,3 +1,14 @@
+/**
+ * app.js
+ * 
+ * Descripción: Este archivo configura el servidor Express para gestionar rutas API relacionadas con usuarios, 
+ *              chatbots, cuestionarios, y más. Implementa la conexión a base de datos, manejo de autenticación,
+ *              y otras funcionalidades esenciales.
+ * 
+ * Año: 2024
+ * 
+ * Autora: Celia Jiménez
+ */
 const express = require('express');
 const cors = require('cors');
 const { ObjectId } = require('mongodb');
@@ -49,7 +60,7 @@ app.get('/', (req, res) => {
     res.send('Bienvenido a la página inicial');
 });
 
-// VIEW QUESTIONNAIRE
+// Ruta para obtener detalles de un cuestionario específico
 app.get('/questionnaires/:questionnaireId', async (req, res) => {
     const questionnaireId = req.params.questionnaireId;
     try {
@@ -66,11 +77,9 @@ app.get('/questionnaires/:questionnaireId', async (req, res) => {
     }
 });
 
-
-// ROUTES FOR USERS
+// Ruta para obtener una lista de todos los usuarios
 app.get('/users', (req, res) => { 
     let users = []; 
-    console.log('busco users');
     db.collection('users')
         .find() 
         .sort({ name: 1 })
@@ -83,6 +92,7 @@ app.get('/users', (req, res) => {
         });
 });
 
+// Ruta para obtener detalles de un usuario específico por ID
 app.get('/users/:id', (req, res) => { 
     if (ObjectId.isValid(req.params.id)) {
         db.collection('users')
@@ -98,6 +108,7 @@ app.get('/users/:id', (req, res) => {
     }
 });
 
+// Ruta para crear un nuevo usuario
 app.post('/users', (req, res) => { 
     const user = req.body;
 
@@ -112,6 +123,7 @@ app.post('/users', (req, res) => {
         });
 });
 
+// Ruta para eliminar un usuario por ID
 app.delete('/users/:id', (req, res) => { 
     if (ObjectId.isValid(req.params.id)) {
         db.collection('users')
@@ -127,6 +139,7 @@ app.delete('/users/:id', (req, res) => {
     }
 });
 
+// Ruta para actualizar la información de un usuario
 app.patch('/users/:id', (req, res) => { 
     const updates = req.body;
 
@@ -144,7 +157,7 @@ app.patch('/users/:id', (req, res) => {
     }
 });
 
-// RUTA PARA OBTENER LA AGENDA DE UN USUARIO
+// Ruta para obtener la agenda de un usuario
 app.get('/users/:userId/agenda', (req, res) => {
     const userId = req.params.userId;
 
@@ -163,7 +176,7 @@ app.get('/users/:userId/agenda', (req, res) => {
     }
 });
 
-// RUTA PARA AGREGAR UN PARTICIPANTE A LA AGENDA DE UN USUARIO
+// Ruta para agregar un participante a la agenda de un usuario
 app.post('/users/:userId/agenda', (req, res) => {
     const userId = req.params.userId;
     const participant = req.body;
@@ -184,7 +197,7 @@ app.post('/users/:userId/agenda', (req, res) => {
     }
 });
 
-// RUTA PARA ACTUALIZAR UN PARTICIPANTE EN LA AGENDA DE UN USUARIO
+// Ruta para actualizar un participante en la agenda de un usuario
 app.patch('/users/:userId/agenda/:participantId', (req, res) => {
     const userId = req.params.userId;
     const participantId = req.params.participantId;
@@ -211,8 +224,7 @@ app.patch('/users/:userId/agenda/:participantId', (req, res) => {
     }
 });
 
-
-// RUTA PARA ELIMINAR UN PARTICIPANTE DE LA AGENDA DE UN USUARIO
+// Ruta para eliminar un participante de la agenda de un usuario
 app.delete('/users/:userId/agenda/:participantId', async (req, res) => {
     const userId = req.params.userId;
     const participantId = req.params.participantId;
@@ -247,8 +259,7 @@ app.delete('/users/:userId/agenda/:participantId', async (req, res) => {
     }
 });
 
-
-// RUTA PARA OBTENER ID PARTICIPANTE
+// Ruta para obtener ID de participante
 app.get('/users/:userId/find-participant', (req, res) => {
     const userId = req.params.userId;
     const name = req.query.name;
@@ -272,6 +283,7 @@ app.get('/users/:userId/find-participant', (req, res) => {
     }
 });
 
+// Ruta para enviar un recordatorio por correo electrónico
 app.post('/send-reminder', async (req, res) => {
     const { testId, participantId } = req.body; 
 
@@ -295,7 +307,6 @@ app.post('/send-reminder', async (req, res) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent:', info.response);
         res.status(200).json({ message: 'Reminder email sent successfully.' });
     } catch (error) {
         console.error('Error sending email:', error);
@@ -303,6 +314,7 @@ app.post('/send-reminder', async (req, res) => {
     }
 });
 
+// Ruta para enviar correos electrónicos a varios participantes
 app.post('/send-email', async (req, res) => {
     const { userId, selectedParticipants, emailTitle, emailText, chatbotId, chatbotMessage } = req.body;
 
@@ -314,7 +326,6 @@ app.post('/send-email', async (req, res) => {
 
         // Obtener cuestionarios asociados al chatbot
         const questionnaires = await chatbotController.getLinkedQuestionnaires(chatbotId);
-        console.log(questionnaires);
 
         const questionnaireOrder = await chatbotController.getOrder(chatbotId);
 
@@ -349,20 +360,19 @@ app.post('/send-email', async (req, res) => {
 
                 // Generar el enlace con el ID del objeto "active"
                 // Codificar el URL para asegurarse de que los caracteres especiales no causen problemas
-		const encodedChatbotLink = encodeURI(`http://localhost:3000/interact/${activeId}`);
+                const encodedChatbotLink = encodeURI(`http://localhost:3000/interact/${activeId}`);
 
-		const mailOptions = {
-		    to: participant.email,
-		    subject: emailTitle,
-		    html: `${emailText}<br><br><a href="${encodedChatbotLink}">Chat with the chatbot</a>`,
-		};
+                const mailOptions = {
+                    to: participant.email,
+                    subject: emailTitle,
+                    html: `${emailText}<br><br><a href="${encodedChatbotLink}">Chat with the chatbot</a>`,
+                };
 
                 // Enviar correo electrónico
                 const info = await transporter.sendMail(mailOptions);
-                console.log('Email sent to', participant.email, ':', info.response);
             } catch (error) {
                 console.error('Error sending email to', participant.email, ':', error);
-                throw error; // Propagar el error para manejarlo más adelante si es necesario
+                throw error; 
             }
         });
 
@@ -377,8 +387,7 @@ app.post('/send-email', async (req, res) => {
     }
 });
 
-
-// ROUTE LOGIN
+// Ruta para iniciar sesión de usuario
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -396,7 +405,7 @@ app.post('/login', async (req, res) => {
   res.status(200).json({ message: 'Login successful', user });
 });
 
-// ROUTE REGISTER
+// Ruta para registrar un nuevo usuario
 app.post('/register', async (req, res) => {
   const { name, surname, username, email, password, repeat } = req.body;
 
@@ -433,8 +442,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// ROUTE CHATBOTS
-// USER CREATES CHATBOT
+// Ruta para crear un nuevo chatbot
 app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) => {
     const userId = req.params.userId;
     if (!req.file) {
@@ -457,16 +465,13 @@ app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) =
         if (!hasAllRequiredDirectories) missingItems.push(...requiredDirectories);
         return res.status(400).json({ error: `Missing required items: ${missingItems.join(', ')}` });
     }
-    console.log("subo archivo a gridfs");
     // Subir archivo a GridFS
     const filename = `${req.body.name}-${new Date().toISOString()}.zip`; // Crea un nombre de archivo único
-    console.log(filename);
     uploadFileToGridFS(req.file.buffer, filename, async (err, fileId) => {
         if (err) {
             console.error('Error uploading file to GridFS:', err);
             return res.status(500).json({ error: 'Failed to upload zip file' });
         }
-        console.log("file uloaded to gridfs");
 
         const date = new Date();
         // Obtener el día, mes y año
@@ -496,8 +501,7 @@ app.post('/users/:userId/chatbots', upload.single('zipFile'), async (req, res) =
     });
 });
 
-
-// OBTAIN USER'S CHATBOTS
+// Ruta para obtener los chatbots de un usuario
 app.get('/users/:userId/chatbots', async (req, res) => {
     const userId = req.params.userId;
 
@@ -510,7 +514,7 @@ app.get('/users/:userId/chatbots', async (req, res) => {
     }
 });
 
-// VIEW CHATBOT
+// Ruta para ver detalles de un chatbot específico
 app.get('/users/:userId/chatbots/:chatbotId', async (req, res) => {
     const chatbotId = req.params.chatbotId;
 
@@ -528,7 +532,7 @@ app.get('/users/:userId/chatbots/:chatbotId', async (req, res) => {
     }
 });
 
-// DELETE CHATBOT BY ID
+// Ruta para eliminar un chatbot por ID
 app.delete('/users/:userId/chatbots/:chatbotId', async (req, res) => {
     const { chatbotId } = req.params;
 
@@ -546,9 +550,7 @@ app.delete('/users/:userId/chatbots/:chatbotId', async (req, res) => {
     }
 });
 
-
-
-// EDIT CHATBOT BY ID
+// Ruta para editar un chatbot por ID
 app.patch('/users/:userId/chatbots/:chatbotId', async (req, res) => {
     const chatbotId = req.params.chatbotId;
     const updates= {
@@ -569,7 +571,7 @@ app.patch('/users/:userId/chatbots/:chatbotId', async (req, res) => {
     }
 });
 
-// USER CREATES QUESTIONNAIRE
+// Ruta para crear un nuevo cuestionario
 app.post('/users/:userId/questionnaires', async (req, res) => {
     const userId = req.params.userId;
     const questionnaireData = req.body;
@@ -583,7 +585,7 @@ app.post('/users/:userId/questionnaires', async (req, res) => {
     }
 });
 
-// OBTAIN USER'S QUESTIONNAIRES
+// Ruta para obtener los cuestionarios de un usuario
 app.get('/users/:userId/questionnaires', async (req, res) => {
     const userId = req.params.userId;
 
@@ -596,6 +598,7 @@ app.get('/users/:userId/questionnaires', async (req, res) => {
     }
 });
 
+// Ruta para eliminar un cuestionario por ID
 app.delete('/users/:userId/questionnaires/:questionnaireId', async (req, res) => {
     const questionnaireId = req.params.questionnaireId;
 
@@ -609,7 +612,6 @@ app.delete('/users/:userId/questionnaires/:questionnaireId', async (req, res) =>
                 const unlinkResult = await chatbotController.unlinkQuestionnaire(chatbot._id, questionnaireId);
                 if (!unlinkResult.success) {
                     console.error(`Failed to unlink questionnaire ${questionnaireId} from chatbot ${chatbot._id}`);
-                    // Considerar si debe seguir adelante o no, aquí se sigue adelante
                 }
             }
         }
@@ -628,10 +630,7 @@ app.delete('/users/:userId/questionnaires/:questionnaireId', async (req, res) =>
     }
 });
 
-
-
-
-// EDIT QUESTIONNAIRE
+// Ruta para editar un cuestionario por ID
 app.patch('/users/:userId/questionnaires/:questionnaireId', async (req, res) => {
     const questionnaireId = req.params.questionnaireId;
     const updates = req.body;
@@ -650,12 +649,11 @@ app.patch('/users/:userId/questionnaires/:questionnaireId', async (req, res) => 
     }
 });
 
-// VIEW QUESTIONNAIRE
+// Ruta para ver detalles de un cuestionario específico
 app.get('/users/:userId/questionnaires/:questionnaireId', async (req, res) => {
     const userId = req.params.userId;
     const questionnaireId = req.params.questionnaireId;
-    console.log(userId);
-    console.log(questionnaireId);
+    
     try {
         const questionnaire = await questionnaireController.getQuestionnaireInfo(userId, questionnaireId);
         
@@ -670,7 +668,7 @@ app.get('/users/:userId/questionnaires/:questionnaireId', async (req, res) => {
     }
 });
 
-// LINK QUESTIONNAIRE TO CHATBOT
+// Ruta para vincular un cuestionario a un chatbot
 app.patch('/users/:userId/chatbots/:chatbotId/link-questionnaire', async (req, res) => {
     const chatbotId = req.params.chatbotId;
     const { questionnaireId } = req.body;
@@ -689,7 +687,7 @@ app.patch('/users/:userId/chatbots/:chatbotId/link-questionnaire', async (req, r
     }
   });
 
-  // UNLINK QUESTIONNAIRE FROM CHATBOT
+// Ruta para desvincular un cuestionario de un chatbot
 app.patch('/users/:userId/chatbots/:chatbotId/unlink-questionnaire', async (req, res) => {
     const chatbotId = req.params.chatbotId;
     const { questionnaireId } = req.body;
@@ -708,6 +706,7 @@ app.patch('/users/:userId/chatbots/:chatbotId/unlink-questionnaire', async (req,
     }
 });
 
+// Ruta para actualizar el orden de un chatbot
 app.patch('/users/:userId/chatbots/:chatbotId/update-order', async (req, res) => {
     const chatbotId = req.params.chatbotId;
     const updates= {
@@ -727,9 +726,7 @@ app.patch('/users/:userId/chatbots/:chatbotId/update-order', async (req, res) =>
     }
 });
 
-
-
-// QUESTIONNAIRES ASSOCIATED TO CHATBOT
+// Ruta para obtener cuestionarios asociados a un chatbot
 app.get('/users/:userId/chatbots/:chatbotId/questionnaires', async (req, res) => {
     const chatbotId = req.params.chatbotId;
 
@@ -742,9 +739,7 @@ app.get('/users/:userId/chatbots/:chatbotId/questionnaires', async (req, res) =>
     }
 });
 
-
-
-//ROUTE FOR OBTAINING ACTIVE TESTS
+// Ruta para obtener pruebas activas de un usuario
 app.get('/users/:userId/active-tests', async (req, res) => {
     const userId = req.params.userId; 
     try {
@@ -784,7 +779,7 @@ app.get('/users/:userId/active-tests', async (req, res) => {
     }
 });
 
-//ROUTE FOR OBTAINING COMPLETED TESTS
+// Ruta para obtener pruebas completadas de un usuario
 app.get('/users/:userId/completed-tests', async (req, res) => {
     const userId = req.params.userId; 
     try {
@@ -826,7 +821,7 @@ app.get('/users/:userId/completed-tests', async (req, res) => {
     }
 });
 
-
+// Ruta para obtener resultados de un ID específico
 app.get('/results/:resultId', async (req, res) => {
     const resultId = req.params.resultId;
 
@@ -840,6 +835,7 @@ app.get('/results/:resultId', async (req, res) => {
     }
 });
 
+// Ruta para obtener resultados filtrados por chatbot y cuestionario
 app.get('/results', async (req, res) => {
     const chatbotId = req.query.chatbotId;
     const questionnaireId = req.query.questionnaireId;
@@ -853,8 +849,7 @@ app.get('/results', async (req, res) => {
     }
 });
 
-
-// Forgot Password Endpoint
+// Ruta para restablecer contraseña
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     if (!email) {
@@ -903,13 +898,13 @@ async function sendPasswordResetEmail(email, newPassword) {
 
     try {
         const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent:', info.response);
     } catch (error) {
         console.error('Failed to send email', error);
-        throw error;  // Re-throw the error to handle it in the calling function
+        throw error;  
     }
 }
 
+// Ruta para completar un cuestionario
 app.get('/chatbot/:chatbotId/questionnaire/:questionnaireId/complete', async (req, res) => {
     const { chatbotId, questionnaireId } = req.params;
 
@@ -927,9 +922,9 @@ app.get('/chatbot/:chatbotId/questionnaire/:questionnaireId/complete', async (re
                 questionMap[index * 2 + 1] = q.positive;
                 questionMap[index * 2 + 2] = q.negative;
             });
-        } else { // custom questionnaire handling
+        } else { 
             questionnaire.questions.forEach((q, index) => {
-                questionMap[index + 1] = q.question; // Custom questionnaires use direct question text
+                questionMap[index + 1] = q.question; 
             });
         }
 
