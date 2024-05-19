@@ -266,7 +266,9 @@ app.get('/users/:userId/find-participant', (req, res) => {
     const surname = req.query.surname;
     const email = req.query.email;
 
+
     if (ObjectId.isValid(userId)) {
+        const db = getDb();
         db.collection('agenda')
         .findOne({ userId: ObjectId(userId),
             name: name,
@@ -282,6 +284,7 @@ app.get('/users/:userId/find-participant', (req, res) => {
         res.status(500).json({ error: 'Not a valid user id' });
     }
 });
+
 
 // Ruta para enviar un recordatorio por correo electrónico
 app.post('/send-reminder', async (req, res) => {
